@@ -1,0 +1,49 @@
+{
+  "name": "kleijnweb/rest-e-tag-bundle",
+  "type": "symfony-bundle",
+  "authors": [
+    {
+      "name": "John Kleijn",
+      "email": "john@kleijnweb.nl",
+      "homepage": "http://www.kleijnweb.nl"
+    }
+  ],
+  "license": "LGPL-3.0",
+  "description": "Caching and Concurrency Control for REST APIs using E-Tag Headers",
+  "autoload": {
+    "psr-4": {
+      "KleijnWeb\\RestETagBundle\\": "src"
+    }
+  },
+  "require": {
+    "php": ">=5.4.0",
+    "psr/log": "1.0",
+    "symfony/dependency-injection": ">=2.6.0",
+    "symfony/config": ">=2.6.0",
+    "symfony/event-dispatcher": ">=2.6.0",
+    "symfony/http-foundation": ">=2.6.0",
+    "symfony/http-kernel": ">=2.6.0",
+    "symfony/filesystem": ">=2.6.0",
+    "symfony/routing": ">=2.6.0",
+    "doctrine/cache": "^1.6"
+  },
+  "require-dev": {
+    "phpunit/phpunit": ">=4.1.0",
+    "symfony/framework-bundle": ">=2.6.0",
+    "symfony/console": ">=2.6.0",
+    "symfony/form": ">=2.6.0",
+    "symfony/serializer": ">=2.6.0",
+    "symfony/monolog-bundle": ">=2.6.0",
+    "sensio/generator-bundle": "~2.3",
+    "mikey179/vfsStream": "^1.5",
+    "zendframework/zend-stdlib": ">=2.4.0",
+    "symfony/browser-kit": ">=2.6.0",
+    "twig/twig": "^1.21",
+    "jms/serializer": "1.0",
+    "phpoption/phpoption": ">=1.1.0"
+
+  },
+  "config": {
+    "bin-dir": "bin"
+  }
+}

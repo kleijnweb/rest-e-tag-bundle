@@ -1,0 +1,12 @@
+services:
+  kernel.listener.rest_e_tags.request:
+    class: KleijnWeb\RestETagBundle\EventListener\RequestListener
+    arguments: ['@rest_e_tags.cache', '%rest_e_tags.concurrency_control%']
+    tags:
+      - { name: kernel.event_listener, event: kernel.request, method: onKernelRequest }
+
+  kernel.listener.rest_e_tags.response:
+    class: KleijnWeb\RestETagBundle\EventListener\ResponseListener
+    arguments: ['@rest_e_tags.cache' ]
+    tags:
+      - { name: kernel.event_listener, event: kernel.response, method: onKernelResponse }
