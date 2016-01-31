@@ -4,6 +4,8 @@ Small bundle that adds caching and Concurrency Control for REST APIs using E-Tag
 
 Go to the [release page](https://github.com/kleijnweb/rest-e-tag-bundle/releases) to find details about the latest release.
 
+For an example see [swagger-bundle-example](https://github.com/kleijnweb/swagger-bundle-example).
+
 ## Functional Details
 
 RestETagBundle uses REST semantics to form a cache invalidation and optimistic concurrency strategy.
