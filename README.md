@@ -1,4 +1,8 @@
-# KleijnWeb\RestETagBundle [![Build Status](https://travis-ci.org/kleijnweb/rest-e-tag-bundle.svg?branch=master)](https://travis-ci.org/kleijnweb/rest-e-tag-bundle)
+# KleijnWeb\RestETagBundle
+[![Build Status](https://travis-ci.org/kleijnweb/rest-e-tag-bundle.svg?branch=master)](https://travis-ci.org/kleijnweb/rest-e-tag-bundle)
+[![Coverage Status](https://coveralls.io/repos/github/kleijnweb/rest-e-tag-bundle/badge.svg?branch=master)](https://coveralls.io/github/kleijnweb/rest-e-tag-bundle?branch=master)
+[![Scrutinizer Code Quality](https://scrutinizer-ci.com/g/kleijnweb/rest-e-tag-bundle/badges/quality-score.png?b=master)](https://scrutinizer-ci.com/g/kleijnweb/rest-e-tag-bundle/?branch=master)
+[![Latest Stable Version](https://poser.pugx.org/kleijnweb/rest-e-tag-bundle/v/stable)](https://packagist.org/packages/kleijnweb/rest-e-tag-bundle)
 
 Small bundle that adds caching and Concurrency Control for REST APIs using E-Tag Headers.
 
