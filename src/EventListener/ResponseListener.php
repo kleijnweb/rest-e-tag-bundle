@@ -38,7 +38,12 @@ class ResponseListener
             return;
         }
         $request = $event->getRequest();
+
         $response = $event->getResponse();
+        if (substr((string)$response->getStatusCode(), 0, 1) !== '2') {
+            // TODO UT this
+            return;
+        }
 
         if (RequestListener::isModifyingMethodRequest($request)) {
             $version = $this->cacheAdapter->update($request, (string)microtime(true));

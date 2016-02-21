@@ -38,7 +38,8 @@ The query part of the URL is treated as the last path segment:
  
 The default child invalidation constraint is a negated regular expression: `\/[0-9]+$`. This means a POST to `/animals/rabbits` will by default not invalidate `/animals/rabbits/1` or any paths below it, but will invalidate `/animals/rabbits/findByName`.
 
-NOTE: The store and retrieve calls are not yet fully optimized and get pretty chatty when using network based caches. You can probably expect best performance from APCu. It won't use that much memory.
+*NOTE:* When concurrency control is turned on, you cannot POST to without the correct E-Tag either.
+*NOTE:* The store and retrieve calls are not yet fully optimized and get pretty chatty when using network based caches. You can probably expect best performance from APCu. It won't use that much memory.
 
 ## Install And Configure
 
@@ -50,6 +51,7 @@ Concurrency control is enabled by default. To disable:
 rest_e_tags:
   concurrency_control: false
 ```
+
 The bundle will work with any Doctrine cache. Use the 'cache' config option to reference the service to be used:
 
 ```yml
