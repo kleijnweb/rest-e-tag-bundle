@@ -24,22 +24,35 @@ The bundle uses microtime based version IDs to prevent loss of the server side c
  
 The versioning scheme is pretty straightforward, examples:
 
- * Modifying `/animals/rabbits/1`: invalidates `/animals`, `/animals/rabbits`, `/animals/rabbits/1`, and (if it exists) `/animals/rabbits/1/relations/owners`
- * GET on `/animals/rabbits/2`: this is not effected by the previous example. In addition, this will create a version if none exists yet (without invalidating anything)
- * Modifying  `/animals/rabbits`: both `/animals` and `/animals/rabbits` get a new version. 
+ * Modifying `/animals/rabbits/1`: 
+   Invalidates `/animals`, `/animals/rabbits`, `/animals/rabbits/1`, and (if it exists) `/animals/rabbits/1/relations/owners`
+   
+ * GET on `/animals/rabbits/2`: 
+   This is not effected by the previous example. In addition, this will create a version if none exists yet (without invalidating anything)
+   
+ * Modifying  `/animals/rabbits`: 
+   Both `/animals` and `/animals/rabbits` get a new version. 
    So will any existing versions matching the child invalidation constraint (see configuration), eg `/animals/rabbits/findByName`
  
 The query part of the URL is treated as the last path segment:
 
- * Modifying `/animals?type=rabbits`: will be interpreted as modification of `/animals/?type=rabbits`. So `/animals` will be invalidated.
- * GET on `/animals?type=rabbits`: will be interpreted as GET `/animals/?type=rabbits`.
- * Modifying `/animals/rabbits?id=1`: will be interpreted as a modification of `/animals/rabbits/?id=1`. So the old versions of both `/animals` and `/animals/rabbits` are invalidated too.
- * GET on `/animals?type=dogs`: will be interpreted as GET `/animals/?type=dogs`. So a modification of `/animals?type=rabbits` will not affect it (but modification of `/animals` will invalidate it). 
+ * Modifying `/animals?type=rabbits`: 
+   Will be interpreted as modification of `/animals/?type=rabbits`. So `/animals` will be invalidated.
+   
+ * GET on `/animals?type=rabbits`: 
+   Will be interpreted as GET `/animals/?type=rabbits`.
+   
+ * Modifying `/animals/rabbits?id=1`: 
+   Will be interpreted as a modification of `/animals/rabbits/?id=1`. So the old versions of both `/animals` and `/animals/rabbits` are invalidated too.
+   
+ * GET on `/animals?type=dogs`: 
+   Will be interpreted as GET `/animals/?type=dogs`. So a modification of `/animals?type=rabbits` will not affect it (but modification of `/animals` will invalidate it). 
  
 The default child invalidation constraint is a negated regular expression: `\/[0-9]+$`. This means a POST to `/animals/rabbits` will by default not invalidate `/animals/rabbits/1` or any paths below it, but will invalidate `/animals/rabbits/findByName`.
 
-*NOTE:* When concurrency control is turned on, you cannot POST to without the correct E-Tag either.
-*NOTE:* The store and retrieve calls are not yet fully optimized and get pretty chatty when using network based caches. You can probably expect best performance from APCu. It won't use that much memory.
+__NOTE:__ When concurrency control is turned on, you cannot POST to without the correct E-Tag either.
+
+__NOTE:__ The store and retrieve calls are not yet fully optimized and get pretty chatty when using network based caches. You can probably expect best performance from APCu. It won't use that much memory.
 
 ## Install And Configure
 
@@ -52,7 +65,7 @@ rest_e_tags:
   concurrency_control: false
 ```
 
-The bundle will work with any Doctrine cache. Use the 'cache' config option to reference the service to be used:
+The bundle will work with any Doctrine cache (low latency cache is strongly recommended). Use the 'cache' config option to reference the service to be used:
 
 ```yml
 rest_e_tags:
@@ -72,6 +85,7 @@ rest_e_tags:
   # Always invalidate, skip regex match
   child_invalidation_constraint: ''
 ```
+
 ## License
 
 KleijnWeb\RestETagBundle is made available under the terms of the [LGPL, version 3.0](https://spdx.org/licenses/LGPL-3.0.html#licenseText).

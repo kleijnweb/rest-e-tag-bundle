@@ -8,7 +8,7 @@
 
 namespace KleijnWeb\RestETagBundle\EventListener;
 
-use KleijnWeb\RestETagBundle\Cache\CacheAdapter;
+use KleijnWeb\RestETagBundle\Version\VersionStore;
 use Symfony\Component\HttpKernel\Event\FilterResponseEvent;
 
 /**
@@ -17,16 +17,16 @@ use Symfony\Component\HttpKernel\Event\FilterResponseEvent;
 class ResponseListener
 {
     /**
-     * @var CacheAdapter
+     * @var VersionStore
      */
-    private $cacheAdapter;
+    private $store;
 
     /**
-     * @param CacheAdapter $cache
+     * @param VersionStore $cache
      */
-    public function __construct(CacheAdapter $cache)
+    public function __construct(VersionStore $cache)
     {
-        $this->cacheAdapter = $cache;
+        $this->store = $cache;
     }
 
     /**
@@ -46,10 +46,10 @@ class ResponseListener
         }
 
         if (RequestListener::isModifyingMethodRequest($request)) {
-            $version = $this->cacheAdapter->update($request, (string)microtime(true));
+            $version = $this->store->update($request, (string)microtime(true));
         } elseif (!RequestListener::isIgnoreMethodRequest($request)) {
-            if (!$version = $this->cacheAdapter->fetch($request)) {
-                $version = $this->cacheAdapter->register($request, (string)microtime(true));
+            if (!$version = $this->store->fetch($request)) {
+                $version = $this->store->register($request, (string)microtime(true));
             }
         }
         if (isset($version)) {

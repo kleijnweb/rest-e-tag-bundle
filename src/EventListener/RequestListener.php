@@ -8,7 +8,7 @@
 
 namespace KleijnWeb\RestETagBundle\EventListener;
 
-use KleijnWeb\RestETagBundle\Cache\CacheAdapter;
+use KleijnWeb\RestETagBundle\Version\VersionStore;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\HttpKernel\Event\GetResponseEvent;
@@ -19,9 +19,9 @@ use Symfony\Component\HttpKernel\Event\GetResponseEvent;
 class RequestListener
 {
     /**
-     * @var CacheAdapter
+     * @var VersionStore
      */
-    private $cacheAdapter;
+    private $store;
 
     /**
      * @var bool
@@ -29,12 +29,12 @@ class RequestListener
     private $concurrencyControl;
 
     /**
-     * @param CacheAdapter $cache
+     * @param VersionStore $store
      * @param bool         $concurrencyControl
      */
-    public function __construct(CacheAdapter $cache, $concurrencyControl = true)
+    public function __construct(VersionStore $store, $concurrencyControl = true)
     {
-        $this->cacheAdapter = $cache;
+        $this->store = $store;
         $this->concurrencyControl = $concurrencyControl;
     }
 
@@ -99,7 +99,7 @@ class RequestListener
             return new Response('', Response::HTTP_METHOD_NOT_ALLOWED);
         }
 
-        if (!$version = $this->cacheAdapter->fetch($request)) {
+        if (!$version = $this->store->fetch($request)) {
             return null;
         }
         $method = strtoupper($request->getMethod());

@@ -9,7 +9,7 @@
 namespace KleijnWeb\RestETagBundle\Tests\EventListener;
 
 use Doctrine\Common\Cache\ArrayCache;
-use KleijnWeb\RestETagBundle\Cache\CacheAdapter;
+use KleijnWeb\RestETagBundle\Version\VersionStore;
 use KleijnWeb\RestETagBundle\EventListener\RequestListener;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
@@ -32,9 +32,9 @@ class RequestListenerTest extends \PHPUnit_Framework_TestCase
     private $eventMock;
 
     /**
-     * @var CacheAdapter
+     * @var VersionStore
      */
-    private $cacheAdapter;
+    private $store;
 
     /**
      * Create mocks
@@ -51,8 +51,8 @@ class RequestListenerTest extends \PHPUnit_Framework_TestCase
             ->method('isMasterRequest')
             ->willReturn(true);
 
-        $this->cacheAdapter = new CacheAdapter(new ArrayCache());
-        $this->listener = new RequestListener($this->cacheAdapter, true);
+        $this->store = new VersionStore(new ArrayCache());
+        $this->listener = new RequestListener($this->store, true);
     }
 
     /**
@@ -68,7 +68,7 @@ class RequestListenerTest extends \PHPUnit_Framework_TestCase
             }));
 
         $this->invokeListener('FAUX');
-        $this->assertEmpty($this->cacheAdapter->fetch(self::createRequest()));
+        $this->assertEmpty($this->store->fetch(self::createRequest()));
     }
 
     /**
@@ -77,7 +77,7 @@ class RequestListenerTest extends \PHPUnit_Framework_TestCase
     public function willCreateNotModifiedResponseCacheHasMatch()
     {
         $version = (string)microtime(true);
-        $this->cacheAdapter->update(self::createRequest(), $version);
+        $this->store->update(self::createRequest(), $version);
 
         $this->eventMock
             ->expects($this->once())
@@ -112,7 +112,7 @@ class RequestListenerTest extends \PHPUnit_Framework_TestCase
         $version1 = microtime(true);
         $version2 = $version1 + 1;
 
-        $this->cacheAdapter->update(self::createRequest(), (string)$version1);
+        $this->store->update(self::createRequest(), (string)$version1);
         $this->eventMock
             ->expects($this->never())
             ->method('setResponse');
@@ -127,7 +127,7 @@ class RequestListenerTest extends \PHPUnit_Framework_TestCase
     {
         $version1 = (string)microtime(true);
 
-        $this->cacheAdapter->update(self::createRequest(), $version1);
+        $this->store->update(self::createRequest(), $version1);
 
         $this->eventMock
             ->expects($this->once())
@@ -147,7 +147,7 @@ class RequestListenerTest extends \PHPUnit_Framework_TestCase
         $version1 = microtime(true);
         $version2 = $version1 + 1;
 
-        $this->cacheAdapter->update(self::createRequest(), (string)$version1);
+        $this->store->update(self::createRequest(), (string)$version1);
 
         $this->eventMock
             ->expects($this->once())

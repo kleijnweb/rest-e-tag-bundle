@@ -9,7 +9,7 @@
 namespace KleijnWeb\RestETagBundle\Tests\EventListener;
 
 use Doctrine\Common\Cache\ArrayCache;
-use KleijnWeb\RestETagBundle\Cache\CacheAdapter;
+use KleijnWeb\RestETagBundle\Version\VersionStore;
 use KleijnWeb\RestETagBundle\EventListener\ResponseListener;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
@@ -32,9 +32,9 @@ class ResponseListenerTest extends \PHPUnit_Framework_TestCase
     private $eventMock;
 
     /**
-     * @var CacheAdapter
+     * @var VersionStore
      */
-    private $cacheAdapter;
+    private $store;
 
     /**
      * @var Response
@@ -60,8 +60,8 @@ class ResponseListenerTest extends \PHPUnit_Framework_TestCase
             ->method('getResponse')
             ->willReturn($this->response = new Response());
 
-        $this->cacheAdapter = new CacheAdapter(new ArrayCache());
-        $this->listener = new ResponseListener($this->cacheAdapter);
+        $this->store = new VersionStore(new ArrayCache());
+        $this->listener = new ResponseListener($this->store);
     }
 
     /**
@@ -70,11 +70,11 @@ class ResponseListenerTest extends \PHPUnit_Framework_TestCase
     public function getRequestDoesNotModifyVersion()
     {
         $this->invokeListener('GET');
-        $originalVersion = $this->cacheAdapter->fetch(self::createRequest());
+        $originalVersion = $this->store->fetch(self::createRequest());
 
         for ($i = 0; $i < 10; ++$i) {
             $this->invokeListener('GET');
-            $this->assertSame($originalVersion, $this->cacheAdapter->fetch(self::createRequest()));
+            $this->assertSame($originalVersion, $this->store->fetch(self::createRequest()));
         }
     }
 
@@ -84,7 +84,7 @@ class ResponseListenerTest extends \PHPUnit_Framework_TestCase
     public function willIgnoreHeadRequest()
     {
         $this->invokeListener('HEAD');
-        $this->assertEmpty($this->cacheAdapter->fetch(self::createRequest()));
+        $this->assertEmpty($this->store->fetch(self::createRequest()));
     }
 
     /**
@@ -93,7 +93,7 @@ class ResponseListenerTest extends \PHPUnit_Framework_TestCase
     public function willIgnoreOptionsRequest()
     {
         $this->invokeListener('HEAD');
-        $this->assertEmpty($this->cacheAdapter->fetch(self::createRequest()));
+        $this->assertEmpty($this->store->fetch(self::createRequest()));
     }
 
     /**
@@ -111,7 +111,7 @@ class ResponseListenerTest extends \PHPUnit_Framework_TestCase
     public function willSaveVersionOnModifiedRequest()
     {
         $this->invokeListener('PUT');
-        $this->assertRegExp('/\d{10}\.\d+/', $this->cacheAdapter->fetch(self::createRequest()));
+        $this->assertRegExp('/\d{10}\.\d+/', $this->store->fetch(self::createRequest()));
     }
 
     /**
@@ -120,9 +120,9 @@ class ResponseListenerTest extends \PHPUnit_Framework_TestCase
     public function willInvalidateAllParentPaths()
     {
         $this->invokeListener('PUT');
-        $this->assertTrue($this->cacheAdapter->containsKey('/foo'));
-        $this->assertTrue($this->cacheAdapter->containsKey('/foo/bar'));
-        $this->assertTrue($this->cacheAdapter->containsKey('/foo/bar/bah'));
+        $this->assertTrue($this->store->containsKey('/foo'));
+        $this->assertTrue($this->store->containsKey('/foo/bar'));
+        $this->assertTrue($this->store->containsKey('/foo/bar/bah'));
     }
 
     /**

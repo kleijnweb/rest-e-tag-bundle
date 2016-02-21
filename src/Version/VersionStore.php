@@ -6,7 +6,7 @@
  * file that was distributed with this source code.
  */
 
-namespace KleijnWeb\RestETagBundle\Cache;
+namespace KleijnWeb\RestETagBundle\Version;
 
 use Doctrine\Common\Cache\Cache;
 use Symfony\Component\HttpFoundation\Request;
@@ -14,7 +14,7 @@ use Symfony\Component\HttpFoundation\Request;
 /**
  * @author John Kleijn <john@kleijnweb.nl>
  */
-class CacheAdapter
+class VersionStore
 {
     const KEY_VERSION = 1;
     const KEY_CHILDREN = 2;
