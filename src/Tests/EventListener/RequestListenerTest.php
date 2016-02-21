@@ -41,16 +41,7 @@ class RequestListenerTest extends \PHPUnit_Framework_TestCase
      */
     protected function setUp()
     {
-        $this->eventMock = $this
-            ->getMockBuilder('Symfony\Component\HttpKernel\Event\GetResponseForExceptionEvent')
-            ->disableOriginalConstructor()
-            ->getMock();
-
-        $this->eventMock
-            ->expects($this->once())
-            ->method('isMasterRequest')
-            ->willReturn(true);
-
+        $this->eventMock = $this->createEventMock();
         $this->store = new VersionStore(new ArrayCache());
         $this->listener = new RequestListener($this->store, true);
     }
@@ -58,7 +49,7 @@ class RequestListenerTest extends \PHPUnit_Framework_TestCase
     /**
      * @test
      */
-    public function limitAllowedMethods()
+    public function willLimitAllowedMethods()
     {
         $this->eventMock
             ->expects($this->once())
@@ -69,6 +60,18 @@ class RequestListenerTest extends \PHPUnit_Framework_TestCase
 
         $this->invokeListener('FAUX');
         $this->assertEmpty($this->store->fetch(self::createRequest()));
+    }
+
+    /**
+     * @test
+     */
+    public function willIgnoreSubRequests()
+    {
+        $eventMock = $this->createEventMock(false);
+        $eventMock->expects($this->never())->method('getRequest');
+
+        $listener = new RequestListener(new VersionStore(new ArrayCache()));
+        $listener->onKernelRequest($eventMock);
     }
 
     /**
@@ -173,6 +176,25 @@ class RequestListenerTest extends \PHPUnit_Framework_TestCase
             ->willReturn($request);
 
         $this->listener->onKernelRequest($this->eventMock);
+    }
+
+    /**
+     * @param bool $masterRequest
+     *
+     * @return \PHPUnit_Framework_MockObject_MockObject
+     */
+    private function createEventMock($masterRequest = true)
+    {
+        $mockEvent = $this
+            ->getMockBuilder('Symfony\Component\HttpKernel\Event\GetResponseForExceptionEvent')
+            ->disableOriginalConstructor()
+            ->getMock();
+        $mockEvent
+            ->expects($this->any())
+            ->method('isMasterRequest')
+            ->willReturn($masterRequest);
+
+        return $mockEvent;
     }
 
     /**

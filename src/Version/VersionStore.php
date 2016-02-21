@@ -249,9 +249,6 @@ class VersionStore
      */
     private function addChild(array &$record, $key)
     {
-        if (!isset($record[self::KEY_CHILDREN])) {
-            $record[self::KEY_CHILDREN] = [];
-        }
         $record[self::KEY_CHILDREN][] = $key;
     }
 

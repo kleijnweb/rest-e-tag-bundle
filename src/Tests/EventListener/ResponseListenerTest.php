@@ -46,15 +46,7 @@ class ResponseListenerTest extends \PHPUnit_Framework_TestCase
      */
     protected function setUp()
     {
-        $this->eventMock = $this
-            ->getMockBuilder('Symfony\Component\HttpKernel\Event\FilterResponseEvent')
-            ->disableOriginalConstructor()
-            ->getMock();
-        $this->eventMock
-            ->expects($this->any())
-            ->method('isMasterRequest')
-            ->willReturn(true);
-
+        $this->eventMock = $this->createEventMock();
         $this->eventMock
             ->expects($this->any())
             ->method('getResponse')
@@ -62,6 +54,17 @@ class ResponseListenerTest extends \PHPUnit_Framework_TestCase
 
         $this->store = new VersionStore(new ArrayCache());
         $this->listener = new ResponseListener($this->store);
+    }
+
+    /**
+     * @test
+     */
+    public function willIgnoreSubRequests()
+    {
+        $eventMock = $this->createEventMock(false);
+        $eventMock->expects($this->never())->method('getRequest');
+        $listener = new ResponseListener(new VersionStore(new ArrayCache()));
+        $listener->onKernelResponse($eventMock);
     }
 
     /**
@@ -144,6 +147,24 @@ class ResponseListenerTest extends \PHPUnit_Framework_TestCase
         return $request;
     }
 
+    /**
+     * @param bool $masterRequest
+     *
+     * @return \PHPUnit_Framework_MockObject_MockObject
+     */
+    private function createEventMock($masterRequest = true)
+    {
+        $mockEvent = $this
+            ->getMockBuilder('Symfony\Component\HttpKernel\Event\FilterResponseEvent')
+            ->disableOriginalConstructor()
+            ->getMock();
+        $mockEvent
+            ->expects($this->any())
+            ->method('isMasterRequest')
+            ->willReturn($masterRequest);
+
+        return $mockEvent;
+    }
 
     /**
      * @param string $method
