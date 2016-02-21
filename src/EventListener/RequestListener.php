@@ -59,9 +59,7 @@ class RequestListener
      */
     public static function isModifyingMethodRequest(Request $request)
     {
-        $method = strtoupper($request->getMethod());
-
-        return in_array($method, ['POST', 'PUT', 'PATCH', 'DELETE']);
+        return self::requestMethodInHaystack($request, ['POST', 'PUT', 'PATCH', 'DELETE']);
     }
 
     /**
@@ -71,9 +69,7 @@ class RequestListener
      */
     public static function isIgnoreMethodRequest(Request $request)
     {
-        $method = strtoupper($request->getMethod());
-
-        return in_array($method, ['OPTIONS', 'HEAD']);
+        return self::requestMethodInHaystack($request, ['OPTIONS', 'HEAD']);
     }
 
     /**
@@ -83,9 +79,19 @@ class RequestListener
      */
     public static function isSupportedMethodRequest(Request $request)
     {
-        $method = strtoupper($request->getMethod());
+        return self::requestMethodInHaystack($request, ['GET', 'OPTIONS', 'HEAD', 'POST', 'PUT', 'PATCH', 'DELETE']);
+    }
 
-        return in_array($method, ['GET', 'OPTIONS', 'HEAD', 'POST', 'PUT', 'PATCH', 'DELETE']);
+
+    /**
+     * @param Request $request
+     * @param array   $haystack
+     *
+     * @return bool
+     */
+    private static function requestMethodInHaystack(Request $request, array $haystack)
+    {
+        return in_array(strtoupper($request->getMethod()), $haystack);
     }
 
     /**

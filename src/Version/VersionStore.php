@@ -58,7 +58,7 @@ class VersionStore
      */
     public function fetch(Request $request)
     {
-        if (!$record = $this->cache->fetch($this->createKey($request))) {
+        if (!$record = $this->fetchRecord($this->createKey($request))) {
             return '';
         }
 
@@ -102,15 +102,15 @@ class VersionStore
         }
 
         foreach ($paths as $i => $path) {
-            $record = $this->cache->fetch($path);
+            $record = $this->fetchRecord($path);
             if ($record) {
-                $this->invalidateChildren($record[self::KEY_CHILDREN], $version);
+                $this->invalidateChildren($record, $version);
             } else {
-                $record = [self::KEY_CHILDREN => []];
+                $record = $this->createRecord();
             }
-            $record[self::KEY_VERSION] = $version;
+            $this->updateVersion($record, $version);
             if (isset($paths[$i + 1])) {
-                $record[self::KEY_CHILDREN][] = $paths[$i + 1];
+                $this->addChild($record, $paths[$i + 1]);
             }
             $this->cache->save($path, $record);
         }
@@ -135,35 +135,39 @@ class VersionStore
         }
 
         foreach ($paths as $i => $path) {
-            $record = $this->cache->fetch($path);
+            $record = $this->fetchRecord($path);
             if (!$record) {
-                $record = [self::KEY_VERSION => $version, self::KEY_CHILDREN => []];
+                $record = $this->createRecord($version);
             }
             if (isset($paths[$i + 1])) {
-                $record[self::KEY_CHILDREN][] = $paths[$i + 1];
+                $this->addChild($record, $paths[$i + 1]);
             }
-            $this->cache->save($path, $record);
+            $this->saveRecord($path, $record);
         }
-        $record = [self::KEY_VERSION => $version, self::KEY_CHILDREN => []];
+        $record = $this->createRecord($version);
         $this->cache->save($this->createKeyFromSegments($segments), $record);
 
         return $version;
     }
 
-    private function invalidateChildren(array $children, $version)
+    /**
+     * @param array  $record
+     * @param string $version
+     */
+    private function invalidateChildren(array $record, $version)
     {
-        foreach ($children as $child) {
+        foreach ($record[self::KEY_CHILDREN] as $child) {
             if ($this->childInvalidationConstraint !== ''
                 && preg_match("/$this->childInvalidationConstraint/", $child)
             ) {
                 // Stop recursive invalidation if it matches
                 return;
             }
-            $record = $this->cache->fetch($child);
-            $record[self::KEY_VERSION] = $version;
-            $this->cache->save($child, $record);
+            $record = $this->fetchRecord($child);
+            $this->updateVersion($record, $version);
+            $this->saveRecord($child, $record);
             if ($record) {
-                $this->invalidateChildren($record[self::KEY_CHILDREN], $version);
+                $this->invalidateChildren($record, $version);
             }
         }
     }
@@ -198,6 +202,57 @@ class VersionStore
     private function createKey(Request $request)
     {
         return $this->createKeyFromSegments($this->getSegments($request));
+    }
+
+    /**
+     * @param string $key
+     * @param array  $record
+     */
+    private function saveRecord($key, array $record)
+    {
+        $this->cache->save($key, $record);
+    }
+
+    /**
+     * @param string $key
+     *
+     * @return array
+     */
+    private function fetchRecord($key)
+    {
+        return $this->cache->fetch($key);
+    }
+
+    /**
+     * @param array  $children
+     * @param string $version
+     *
+     * @return array
+     */
+    private function createRecord($version = '', $children = [])
+    {
+        return [self::KEY_VERSION => $version, self::KEY_CHILDREN => $children];
+    }
+
+    /**
+     * @param array  $record
+     * @param string $version
+     */
+    private function updateVersion(array &$record, $version)
+    {
+        $record[self::KEY_VERSION] = $version;
+    }
+
+    /**
+     * @param array  $record
+     * @param string $key
+     */
+    private function addChild(array &$record, $key)
+    {
+        if (!isset($record[self::KEY_CHILDREN])) {
+            $record[self::KEY_CHILDREN] = [];
+        }
+        $record[self::KEY_CHILDREN][] = $key;
     }
 
     /**
