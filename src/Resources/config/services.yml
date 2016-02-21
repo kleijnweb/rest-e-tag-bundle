@@ -1,12 +1,16 @@
 services:
-  kernel.listener.rest_e_tags.request:
+  rest_e_tags.kernel.listener.request:
     class: KleijnWeb\RestETagBundle\EventListener\RequestListener
-    arguments: ['@rest_e_tags.cache', '%rest_e_tags.concurrency_control%']
+    arguments: ['@rest_e_tags.cache_adapter', '%rest_e_tags.concurrency_control%']
     tags:
       - { name: kernel.event_listener, event: kernel.request, method: onKernelRequest }
 
-  kernel.listener.rest_e_tags.response:
+  rest_e_tags.kernel.listener.response:
     class: KleijnWeb\RestETagBundle\EventListener\ResponseListener
-    arguments: ['@rest_e_tags.cache' ]
+    arguments: ['@rest_e_tags.cache_adapter' ]
     tags:
       - { name: kernel.event_listener, event: kernel.response, method: onKernelResponse }
+
+  rest_e_tags.cache_adapter:
+    class: KleijnWeb\RestETagBundle\Cache\CacheAdapter
+    arguments: ['@rest_e_tags.cache', '%child_invalidation_constraint']

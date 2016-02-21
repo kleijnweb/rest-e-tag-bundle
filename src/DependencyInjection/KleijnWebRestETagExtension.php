@@ -27,6 +27,7 @@ class KleijnWebRestETagExtension extends Extension
         $loader = new Loader\YamlFileLoader($container, new FileLocator(__DIR__ . '/../Resources/config'));
         $loader->load('services.yml');
         $container->setParameter('rest_e_tags.concurrency_control', $config['concurrency_control']);
+        $container->setParameter('rest_e_tags.child_invalidation_constraint', $config['child_invalidation_constraint']);
         $container->setAlias('rest_e_tags.cache', $config['cache']);
     }
 

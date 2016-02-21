@@ -8,7 +8,7 @@
 
 namespace KleijnWeb\RestETagBundle\EventListener;
 
-use Doctrine\Common\Cache\Cache;
+use KleijnWeb\RestETagBundle\Cache\CacheAdapter;
 use Symfony\Component\HttpKernel\Event\FilterResponseEvent;
 
 /**
@@ -17,16 +17,16 @@ use Symfony\Component\HttpKernel\Event\FilterResponseEvent;
 class ResponseListener
 {
     /**
-     * @var Cache
+     * @var CacheAdapter
      */
-    private $cache;
+    private $cacheAdapter;
 
     /**
-     * @param Cache $cache
+     * @param CacheAdapter $cache
      */
-    public function __construct(Cache $cache)
+    public function __construct(CacheAdapter $cache)
     {
-        $this->cache = $cache;
+        $this->cacheAdapter = $cache;
     }
 
     /**
@@ -38,19 +38,21 @@ class ResponseListener
             return;
         }
         $request = $event->getRequest();
-        $version = $this->cache->fetch($request->getPathInfo());
 
         $response = $event->getResponse();
-        if (RequestListener::isModifyingRequest($request)) {
-            $version = microtime(true);
-            $path = $request->getPathInfo();
-            $partialPath = '';
-            foreach (explode('/', ltrim($path, '/')) as $segment) {
-                $partialPath .= "/$segment";
-                $this->cache->save($partialPath, $version);
+        if (substr((string)$response->getStatusCode(), 0, 1) !== '2') {
+            // TODO UT this
+            return;
+        }
+
+        if (RequestListener::isModifyingMethodRequest($request)) {
+            $version = $this->cacheAdapter->update($request, (string)microtime(true));
+        } elseif (!RequestListener::isIgnoreMethodRequest($request)) {
+            if (!$version = $this->cacheAdapter->fetch($request)) {
+                $version = $this->cacheAdapter->register($request, (string)microtime(true));
             }
         }
-        if ($version) {
+        if (isset($version)) {
             $response->headers->set('ETag', $version);
         }
     }

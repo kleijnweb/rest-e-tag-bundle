@@ -8,7 +8,7 @@
 
 namespace KleijnWeb\RestETagBundle\EventListener;
 
-use Doctrine\Common\Cache\Cache;
+use KleijnWeb\RestETagBundle\Cache\CacheAdapter;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\HttpKernel\Event\GetResponseEvent;
@@ -19,9 +19,9 @@ use Symfony\Component\HttpKernel\Event\GetResponseEvent;
 class RequestListener
 {
     /**
-     * @var Cache
+     * @var CacheAdapter
      */
-    private $cache;
+    private $cacheAdapter;
 
     /**
      * @var bool
@@ -29,12 +29,12 @@ class RequestListener
     private $concurrencyControl;
 
     /**
-     * @param Cache $cache
-     * @param bool  $concurrencyControl
+     * @param CacheAdapter $cache
+     * @param bool         $concurrencyControl
      */
-    public function __construct(Cache $cache, $concurrencyControl = true)
+    public function __construct(CacheAdapter $cache, $concurrencyControl = true)
     {
-        $this->cache = $cache;
+        $this->cacheAdapter = $cache;
         $this->concurrencyControl = $concurrencyControl;
     }
 
@@ -57,7 +57,7 @@ class RequestListener
      *
      * @return bool
      */
-    public static function isModifyingRequest(Request $request)
+    public static function isModifyingMethodRequest(Request $request)
     {
         $method = strtoupper($request->getMethod());
 
@@ -67,11 +67,39 @@ class RequestListener
     /**
      * @param Request $request
      *
+     * @return bool
+     */
+    public static function isIgnoreMethodRequest(Request $request)
+    {
+        $method = strtoupper($request->getMethod());
+
+        return in_array($method, ['OPTIONS', 'HEAD']);
+    }
+
+    /**
+     * @param Request $request
+     *
+     * @return bool
+     */
+    public static function isSupportedMethodRequest(Request $request)
+    {
+        $method = strtoupper($request->getMethod());
+
+        return in_array($method, ['GET', 'OPTIONS', 'HEAD', 'POST', 'PUT', 'PATCH', 'DELETE']);
+    }
+
+    /**
+     * @param Request $request
+     *
      * @return null|Response
      */
     private function createResponse(Request $request)
     {
-        if (!$version = $this->cache->fetch($request->getPathInfo())) {
+        if (!self::isSupportedMethodRequest($request)) {
+            return new Response('', Response::HTTP_METHOD_NOT_ALLOWED);
+        }
+
+        if (!$version = $this->cacheAdapter->fetch($request)) {
             return null;
         }
         $method = strtoupper($request->getMethod());
@@ -81,7 +109,7 @@ class RequestListener
             if ($ifNoneMatch && $version === $ifNoneMatch) {
                 return new Response('', Response::HTTP_NOT_MODIFIED);
             }
-        } elseif ($this->concurrencyControl && self::isModifyingRequest($request)) {
+        } elseif ($this->concurrencyControl && self::isModifyingMethodRequest($request)) {
             $ifMatch = $request->headers->get('If-Match');
             if (!$ifMatch) {
                 return new Response('', Response::HTTP_PRECONDITION_REQUIRED);

@@ -6,9 +6,10 @@
  * file that was distributed with this source code.
  */
 
-namespace KleijnWeb\RestETagBundle\Tests\Dev\EventListener;
+namespace KleijnWeb\RestETagBundle\Tests\EventListener;
 
 use Doctrine\Common\Cache\ArrayCache;
+use KleijnWeb\RestETagBundle\Cache\CacheAdapter;
 use KleijnWeb\RestETagBundle\EventListener\RequestListener;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
@@ -31,9 +32,9 @@ class RequestListenerTest extends \PHPUnit_Framework_TestCase
     private $eventMock;
 
     /**
-     * @var ArrayCache
+     * @var CacheAdapter
      */
-    private $cache;
+    private $cacheAdapter;
 
     /**
      * Create mocks
@@ -50,8 +51,24 @@ class RequestListenerTest extends \PHPUnit_Framework_TestCase
             ->method('isMasterRequest')
             ->willReturn(true);
 
-        $this->cache = new ArrayCache();
-        $this->listener = new RequestListener($this->cache, true);
+        $this->cacheAdapter = new CacheAdapter(new ArrayCache());
+        $this->listener = new RequestListener($this->cacheAdapter, true);
+    }
+
+    /**
+     * @test
+     */
+    public function limitAllowedMethods()
+    {
+        $this->eventMock
+            ->expects($this->once())
+            ->method('setResponse')
+            ->with($this->callback(function (Response $response) {
+                return $response->getStatusCode() === Response::HTTP_METHOD_NOT_ALLOWED;
+            }));
+
+        $this->invokeListener('FAUX');
+        $this->assertEmpty($this->cacheAdapter->fetch(self::createRequest()));
     }
 
     /**
@@ -59,9 +76,8 @@ class RequestListenerTest extends \PHPUnit_Framework_TestCase
      */
     public function willCreateNotModifiedResponseCacheHasMatch()
     {
-        $version = microtime(true);
-
-        $this->cache->save(self::URI, $version);
+        $version = (string)microtime(true);
+        $this->cacheAdapter->update(self::createRequest(), $version);
 
         $this->eventMock
             ->expects($this->once())
@@ -69,6 +85,7 @@ class RequestListenerTest extends \PHPUnit_Framework_TestCase
             ->with($this->callback(function (Response $response) {
                 return $response->getStatusCode() === Response::HTTP_NOT_MODIFIED;
             }));
+
 
         $this->invokeListener('GET', ['HTTP_IF_NONE_MATCH' => $version]);
     }
@@ -78,7 +95,7 @@ class RequestListenerTest extends \PHPUnit_Framework_TestCase
      */
     public function willNotCreateResponseWhenCacheIsEmpty()
     {
-        $version = microtime(true);
+        $version = (string)microtime(true);
 
         $this->eventMock
             ->expects($this->never())
@@ -95,13 +112,12 @@ class RequestListenerTest extends \PHPUnit_Framework_TestCase
         $version1 = microtime(true);
         $version2 = $version1 + 1;
 
-        $this->cache->save(self::URI, $version1);
-
+        $this->cacheAdapter->update(self::createRequest(), (string)$version1);
         $this->eventMock
             ->expects($this->never())
             ->method('setResponse');
 
-        $this->invokeListener('GET', ['HTTP_IF_NONE_MATCH' => $version2]);
+        $this->invokeListener('GET', ['HTTP_IF_NONE_MATCH' => (string)$version2]);
     }
 
     /**
@@ -109,9 +125,9 @@ class RequestListenerTest extends \PHPUnit_Framework_TestCase
      */
     public function willCreatePreconditionRequiredWhenHeaderIsMissing()
     {
-        $version1 = microtime(true);
+        $version1 = (string)microtime(true);
 
-        $this->cache->save(self::URI, $version1);
+        $this->cacheAdapter->update(self::createRequest(), $version1);
 
         $this->eventMock
             ->expects($this->once())
@@ -131,7 +147,7 @@ class RequestListenerTest extends \PHPUnit_Framework_TestCase
         $version1 = microtime(true);
         $version2 = $version1 + 1;
 
-        $this->cache->save(self::URI, $version1);
+        $this->cacheAdapter->update(self::createRequest(), (string)$version1);
 
         $this->eventMock
             ->expects($this->once())
@@ -140,16 +156,16 @@ class RequestListenerTest extends \PHPUnit_Framework_TestCase
                 return $response->getStatusCode() === Response::HTTP_PRECONDITION_FAILED;
             }));
 
-        $this->invokeListener('POST', ['HTTP_IF_MATCH' => $version2]);
+        $this->invokeListener('POST', ['HTTP_IF_MATCH' => (string)$version2]);
     }
 
     /**
      * @param string $method
-     * @param array $server
+     * @param array  $server
      */
     private function invokeListener($method, array $server = [])
     {
-        $request = Request::create(self::URI, $method, [], [], [], $server);
+        $request = self::createRequest($method, $server);
 
         $this->eventMock
             ->expects($this->once())
@@ -157,5 +173,16 @@ class RequestListenerTest extends \PHPUnit_Framework_TestCase
             ->willReturn($request);
 
         $this->listener->onKernelRequest($this->eventMock);
+    }
+
+    /**
+     * @param string $method
+     * @param array  $server
+     *
+     * @return Request
+     */
+    private static function createRequest($method = "GET", array $server = [])
+    {
+        return Request::create(self::URI, $method, [], [], [], $server);
     }
 }

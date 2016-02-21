@@ -1,3 +1,7 @@
 foobar:
     path:      /foo/bar
     defaults:  { _controller: FooBundle:Foo:foobar }
+
+foobardoh:
+    path:      /foo/bar/doh
+    defaults:  { _controller: FooBundle:Foo:foobar }

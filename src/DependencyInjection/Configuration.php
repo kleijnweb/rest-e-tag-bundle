@@ -27,7 +27,8 @@ class Configuration implements ConfigurationInterface
         $rootNode
             ->children()
             ->booleanNode('concurrency_control')->defaultFalse()->end()
-            ->scalarNode('cache')->defaultFalse()->end()
+            ->scalarNode('child_invalidation_constraint')->defaultValue('\/[0-9]+$')->end()
+            ->scalarNode('cache')->isRequired()->defaultFalse()->end()
         ;
 
         return $treeBuilder;
