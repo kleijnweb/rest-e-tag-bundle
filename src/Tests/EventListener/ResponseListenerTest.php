@@ -6,9 +6,10 @@
  * file that was distributed with this source code.
  */
 
-namespace KleijnWeb\RestETagBundle\Tests\Dev\EventListener;
+namespace KleijnWeb\RestETagBundle\Tests\EventListener;
 
 use Doctrine\Common\Cache\ArrayCache;
+use KleijnWeb\RestETagBundle\Cache\CacheAdapter;
 use KleijnWeb\RestETagBundle\EventListener\ResponseListener;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
@@ -31,9 +32,9 @@ class ResponseListenerTest extends \PHPUnit_Framework_TestCase
     private $eventMock;
 
     /**
-     * @var ArrayCache
+     * @var CacheAdapter
      */
-    private $cache;
+    private $cacheAdapter;
 
     /**
      * @var Response
@@ -50,26 +51,31 @@ class ResponseListenerTest extends \PHPUnit_Framework_TestCase
             ->disableOriginalConstructor()
             ->getMock();
         $this->eventMock
-            ->expects($this->once())
+            ->expects($this->any())
             ->method('isMasterRequest')
             ->willReturn(true);
 
         $this->eventMock
-            ->expects($this->once())
+            ->expects($this->any())
             ->method('getResponse')
             ->willReturn($this->response = new Response());
 
-        $this->cache = new ArrayCache();
-        $this->listener = new ResponseListener($this->cache);
+        $this->cacheAdapter = new CacheAdapter(new ArrayCache());
+        $this->listener = new ResponseListener($this->cacheAdapter);
     }
 
     /**
      * @test
      */
-    public function willIgnoreGetRequest()
+    public function getRequestDoesNotModifyVersion()
     {
         $this->invokeListener('GET');
-        $this->assertFalse($this->cache->fetch(self::URI));
+        $originalVersion = $this->cacheAdapter->fetch(self::createRequest());
+
+        for ($i = 0; $i < 10; ++$i) {
+            $this->invokeListener('GET');
+            $this->assertSame($originalVersion, $this->cacheAdapter->fetch(self::createRequest()));
+        }
     }
 
     /**
@@ -78,7 +84,16 @@ class ResponseListenerTest extends \PHPUnit_Framework_TestCase
     public function willIgnoreHeadRequest()
     {
         $this->invokeListener('HEAD');
-        $this->assertFalse($this->cache->fetch(self::URI));
+        $this->assertEmpty($this->cacheAdapter->fetch(self::createRequest()));
+    }
+
+    /**
+     * @test
+     */
+    public function willIgnoreOptionsRequest()
+    {
+        $this->invokeListener('HEAD');
+        $this->assertEmpty($this->cacheAdapter->fetch(self::createRequest()));
     }
 
     /**
@@ -96,7 +111,7 @@ class ResponseListenerTest extends \PHPUnit_Framework_TestCase
     public function willSaveVersionOnModifiedRequest()
     {
         $this->invokeListener('PUT');
-        $this->assertRegExp('/\d{10}\.\d+/', (string)$this->cache->fetch(self::URI));
+        $this->assertRegExp('/\d{10}\.\d+/', $this->cacheAdapter->fetch(self::createRequest()));
     }
 
     /**
@@ -105,23 +120,39 @@ class ResponseListenerTest extends \PHPUnit_Framework_TestCase
     public function willInvalidateAllParentPaths()
     {
         $this->invokeListener('PUT');
-        $this->assertTrue($this->cache->contains('/foo'));
-        $this->assertTrue($this->cache->contains('/foo/bar'));
-        $this->assertTrue($this->cache->contains('/foo/bar/bah'));
+        $this->assertTrue($this->cacheAdapter->containsKey('/foo'));
+        $this->assertTrue($this->cacheAdapter->containsKey('/foo/bar'));
+        $this->assertTrue($this->cacheAdapter->containsKey('/foo/bar/bah'));
     }
 
     /**
      * @param string $method
+     *
+     * @return Request
      */
     private function invokeListener($method)
     {
         $request = Request::create(self::URI, $method);
 
         $this->eventMock
-            ->expects($this->once())
+            ->expects($this->any())
             ->method('getRequest')
             ->willReturn($request);
 
         $this->listener->onKernelResponse($this->eventMock);
+
+        return $request;
+    }
+
+
+    /**
+     * @param string $method
+     * @param array  $server
+     *
+     * @return Request
+     */
+    private static function createRequest($method = "GET", array $server = [])
+    {
+        return Request::create(self::URI, $method, [], [], [], $server);
     }
 }

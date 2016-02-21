@@ -44,6 +44,53 @@ class FunctionalTest extends WebTestCase
     /**
      * @test
      */
+    public function willInvalidateWhenPostingToParent()
+    {
+        $client = self::createClient();
+        $client->disableReboot();
+        $childUrl = '/foo/bar/doh';
+        $client->request('GET', $childUrl);
+        $response = $client->getResponse();
+        $originalEtag = $response->getEtag();
+        $this->assertNotEmpty($originalEtag);
+
+        // Sanity check
+        $client->request('GET', $childUrl, [], [], ['HTTP_IF_NONE_MATCH' => $originalEtag]);
+        $response = $client->getResponse();
+        $this->assertSame(Response::HTTP_NOT_MODIFIED, $response->getStatusCode());
+
+        // Validate that when we post to what should be the parent, the resource is marked as modified
+        $client->request('POST', '/foo/bar');
+        $client->request('GET', $childUrl, [], [], ['HTTP_IF_NONE_MATCH' => $originalEtag]);
+        $this->assertNotSame(Response::HTTP_NOT_MODIFIED, $response->getStatusCode());
+    }
+
+    /**
+     * @test
+     */
+    public function willTreatQueryAsASegment()
+    {
+        $client = self::createClient();
+        $client->disableReboot();
+        $client->request('GET', '/foo/bar?doh=1');
+        $response = $client->getResponse();
+        $originalEtag = $response->getEtag();
+        $this->assertNotEmpty($originalEtag);
+
+        // Sanity check
+        $client->request('GET', '/foo/bar?doh=1', [], [], ['HTTP_IF_NONE_MATCH' => $originalEtag]);
+        $response = $client->getResponse();
+        $this->assertSame(Response::HTTP_NOT_MODIFIED, $response->getStatusCode());
+
+        // Validate that when we post to what should be the parent, the resource is marked as modified
+        $client->request('POST', '/foo/bar');
+        $client->request('GET', '/foo/bar?doh=1', [], [], ['HTTP_IF_NONE_MATCH' => $originalEtag]);
+        $this->assertNotSame(Response::HTTP_NOT_MODIFIED, $response->getStatusCode());
+    }
+
+    /**
+     * @test
+     */
     public function willAddETagForKnownResources()
     {
         $client = self::createClient();
