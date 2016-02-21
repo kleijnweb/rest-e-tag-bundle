@@ -12,5 +12,5 @@ services:
       - { name: kernel.event_listener, event: kernel.response, method: onKernelResponse }
 
   rest_e_tags.cache_adapter:
-    class: KleijnWeb\RestETagBundle\Cache\VersionStore
+    class: KleijnWeb\RestETagBundle\Version\VersionStore
     arguments: ['@rest_e_tags.cache', '%child_invalidation_constraint']
