@@ -10,13 +10,15 @@ Go to the [release page](https://github.com/kleijnweb/rest-e-tag-bundle/releases
 
 For an example see [swagger-bundle-example](https://github.com/kleijnweb/swagger-bundle-example).
 
+*NOTE:* Looking for PHP <7.0 and Symfony <2.8.7 support? Use a 01.x version. 
+
 ## Functional Details
 
 RestETagBundle uses REST semantics to form a cache invalidation and optimistic concurrency strategy.
  
 * Versions the resources your URI paths represents and keeps this list in a server side cache.
 * Increments the version of a path when one of the following methods is used: POST, PUT, PATCH, DELETE
-* Increments the version of all parent and selected "lower" paths when that of a child in incremented 
+* Increments the version of all parent and selected "lower" paths when that of a child is incremented 
 * Ensures the tag passed using If-Match matches the ETag in the cache, returns HTTP 412 in case of discrepancy.
 * Returns HTTP 428 responses when concurrency control is enabled and the appropriate header is missing.
 
@@ -65,11 +67,11 @@ rest_e_tags:
   concurrency_control: false
 ```
 
-The bundle will work with any Doctrine cache (low latency cache is strongly recommended). Use the 'cache' config option to reference the service to be used:
+The bundle will work with any PSR-16 cache (networked caches are strongly discouraged). Use the 'cache' config option to reference the service to be used:
 
 ```yml
 rest_e_tags:
-  cache: my.doctrine.cache
+  cache: my.cache.service
 ```
    
 You can tweak the default child invalidation constraint (negated, see default above):

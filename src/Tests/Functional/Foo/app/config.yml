@@ -6,7 +6,7 @@ services:
   controller.pet:
     class: KleijnWeb\RestETagBundle\Tests\Functional\Foo\Controller\PetController
   cache.array:
-    class: Doctrine\Common\Cache\ArrayCache
+    class: Symfony\Component\Cache\Simple\ArrayCache
 
 framework:
   test: true

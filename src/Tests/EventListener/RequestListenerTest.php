@@ -1,4 +1,4 @@
-<?php
+<?php declare(strict_types = 1);
 /*
  * This file is part of the KleijnWeb\RestETagBundle package.
  *
@@ -8,11 +8,12 @@
 
 namespace KleijnWeb\RestETagBundle\Tests\EventListener;
 
-use Doctrine\Common\Cache\ArrayCache;
+use Symfony\Component\Cache\Simple\ArrayCache;
 use KleijnWeb\RestETagBundle\Version\VersionStore;
 use KleijnWeb\RestETagBundle\EventListener\RequestListener;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
+use Symfony\Component\HttpKernel\Event\GetResponseForExceptionEvent;
 
 /**
  * @author John Kleijn <john@kleijnweb.nl>
@@ -186,7 +187,7 @@ class RequestListenerTest extends \PHPUnit_Framework_TestCase
     private function createEventMock($masterRequest = true)
     {
         $mockEvent = $this
-            ->getMockBuilder('Symfony\Component\HttpKernel\Event\GetResponseForExceptionEvent')
+            ->getMockBuilder(GetResponseForExceptionEvent::class)
             ->disableOriginalConstructor()
             ->getMock();
         $mockEvent

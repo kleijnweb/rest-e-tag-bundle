@@ -1,4 +1,4 @@
-<?php
+<?php declare(strict_types = 1);
 /*
  * This file is part of the KleijnWeb\RestETagBundle package.
  *
@@ -32,7 +32,7 @@ class RequestListener
      * @param VersionStore $store
      * @param bool         $concurrencyControl
      */
-    public function __construct(VersionStore $store, $concurrencyControl = true)
+    public function __construct(VersionStore $store, bool $concurrencyControl = true)
     {
         $this->store = $store;
         $this->concurrencyControl = $concurrencyControl;

@@ -8,7 +8,7 @@
 
 namespace KleijnWeb\RestETagBundle\Version;
 
-use Doctrine\Common\Cache\Cache;
+use Psr\SimpleCache\CacheInterface;
 use Symfony\Component\HttpFoundation\Request;
 
 /**
@@ -20,7 +20,7 @@ class VersionStore
     const KEY_CHILDREN = 2;
 
     /**
-     * @var Cache
+     * @var CacheInterface
      */
     private $cache;
 
@@ -30,10 +30,10 @@ class VersionStore
     private $childInvalidationConstraint;
 
     /**
-     * @param Cache  $cache
+     * @param CacheInterface  $cache
      * @param string $childInvalidationConstraint
      */
-    public function __construct(Cache $cache, $childInvalidationConstraint = '')
+    public function __construct(CacheInterface $cache, $childInvalidationConstraint = '')
     {
         $this->cache = $cache;
         $this->childInvalidationConstraint = $childInvalidationConstraint;
@@ -76,13 +76,23 @@ class VersionStore
     }
 
     /**
+     * @param string $path
+     *
+     * @return bool
+     */
+    public function containsPath($path)
+    {
+        return $this->containsKey($this->createKeyFromPath($path));
+    }
+
+    /**
      * @param string $key
      *
      * @return bool
      */
     public function containsKey($key)
     {
-        return $this->cache->contains($key);
+        return $this->cache->has($key);
     }
 
     /**
@@ -97,7 +107,7 @@ class VersionStore
         $paths = [];
         $path = '';
         foreach ($segments as $segment) {
-            $path .= "/$segment";
+            $path .= "#$segment";
             $paths[] = $path;
         }
 
@@ -112,7 +122,7 @@ class VersionStore
             if (isset($paths[$i + 1])) {
                 $this->addChild($record, $paths[$i + 1]);
             }
-            $this->cache->save($path, $record);
+            $this->cache->set($path, $record);
         }
 
         return $version;
@@ -130,7 +140,7 @@ class VersionStore
         $paths = [];
         $path = '';
         foreach ($segments as $segment) {
-            $path .= "/$segment";
+            $path .= "#$segment";
             $paths[] = $path;
         }
 
@@ -145,7 +155,7 @@ class VersionStore
             $this->saveRecord($path, $record);
         }
         $record = $this->createRecord($version);
-        $this->cache->save($this->createKeyFromSegments($segments), $record);
+        $this->cache->set($this->createKeyFromSegments($segments), $record);
 
         return $version;
     }
@@ -158,7 +168,7 @@ class VersionStore
     {
         foreach ($record[self::KEY_CHILDREN] as $child) {
             if ($this->childInvalidationConstraint !== ''
-                && preg_match("/$this->childInvalidationConstraint/", $child)
+                && preg_match("/$this->childInvalidationConstraint/", $this->createPathFromKey($child))
             ) {
                 // Stop recursive invalidation if it matches
                 return;
@@ -210,7 +220,7 @@ class VersionStore
      */
     private function saveRecord($key, array $record)
     {
-        $this->cache->save($key, $record);
+        $this->cache->set($key, $record);
     }
 
     /**
@@ -220,7 +230,7 @@ class VersionStore
      */
     private function fetchRecord($key)
     {
-        return $this->cache->fetch($key);
+        return $this->cache->get($key);
     }
 
     /**
@@ -259,6 +269,24 @@ class VersionStore
      */
     private function createKeyFromSegments(array $segments)
     {
-        return '/' . implode('/', $segments);
+        return '#' . implode('#', $segments);
+    }
+
+    /**
+     * @param string $key
+     * @return string
+     */
+    private function createPathFromKey(string $key)
+    {
+        return strtr($key, '#', '/');
+    }
+
+    /**
+     * @param string $path
+     * @return string
+     */
+    private function createKeyFromPath(string $path)
+    {
+        return strtr($path, '/', '#');
     }
 }

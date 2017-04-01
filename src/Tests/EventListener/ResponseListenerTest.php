@@ -1,4 +1,4 @@
-<?php
+<?php declare(strict_types = 1);
 /*
  * This file is part of the KleijnWeb\RestETagBundle package.
  *
@@ -8,11 +8,12 @@
 
 namespace KleijnWeb\RestETagBundle\Tests\EventListener;
 
-use Doctrine\Common\Cache\ArrayCache;
+use Symfony\Component\Cache\Simple\ArrayCache;
 use KleijnWeb\RestETagBundle\Version\VersionStore;
 use KleijnWeb\RestETagBundle\EventListener\ResponseListener;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
+use Symfony\Component\HttpKernel\Event\FilterResponseEvent;
 
 /**
  * @author John Kleijn <john@kleijnweb.nl>
@@ -123,9 +124,9 @@ class ResponseListenerTest extends \PHPUnit_Framework_TestCase
     public function willInvalidateAllParentPaths()
     {
         $this->invokeListener('PUT');
-        $this->assertTrue($this->store->containsKey('/foo'));
-        $this->assertTrue($this->store->containsKey('/foo/bar'));
-        $this->assertTrue($this->store->containsKey('/foo/bar/bah'));
+        $this->assertTrue($this->store->containsPath('/foo'));
+        $this->assertTrue($this->store->containsPath('/foo/bar'));
+        $this->assertTrue($this->store->containsPath('/foo/bar/bah'));
     }
 
     /**
@@ -155,7 +156,7 @@ class ResponseListenerTest extends \PHPUnit_Framework_TestCase
     private function createEventMock($masterRequest = true)
     {
         $mockEvent = $this
-            ->getMockBuilder('Symfony\Component\HttpKernel\Event\FilterResponseEvent')
+            ->getMockBuilder(FilterResponseEvent::class)
             ->disableOriginalConstructor()
             ->getMock();
         $mockEvent

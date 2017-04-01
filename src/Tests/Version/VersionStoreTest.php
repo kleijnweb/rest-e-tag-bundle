@@ -8,7 +8,7 @@
 
 namespace KleijnWeb\RestETagBundle\Tests\EventListener;
 
-use Doctrine\Common\Cache\ArrayCache;
+use Symfony\Component\Cache\Simple\ArrayCache;
 use KleijnWeb\RestETagBundle\Version\VersionStore;
 use Symfony\Component\HttpFoundation\Request;
 
@@ -36,7 +36,7 @@ class VersionStoreTest extends \PHPUnit_Framework_TestCase
     public function canSaveAndFetchUsingPath()
     {
         $uri = "/a/b/cee/dee/eff";
-        $version = microtime(true);
+        $version = 'version';
         $this->store->update(Request::create($uri), $version);
         $this->assertSame($version, $this->store->fetch(Request::create($uri)));
     }
@@ -47,7 +47,7 @@ class VersionStoreTest extends \PHPUnit_Framework_TestCase
     public function canSaveAndFetchUsingPathAndQuery()
     {
         $uri = "/a/b/cee/?dee=eff";
-        $version = microtime(true);
+        $version = 'version';
         $this->store->update(Request::create($uri), $version);
         $this->assertSame($version, $this->store->fetch(Request::create($uri)));
     }
@@ -58,7 +58,7 @@ class VersionStoreTest extends \PHPUnit_Framework_TestCase
     public function willInsertSlashBeforeQuery()
     {
         $uri = "/a/b/cee?dee=eff";
-        $version = microtime(true);
+        $version = 'version';
         $this->store->update(Request::create($uri), $version);
         $this->assertSame($version, $this->store->fetch(Request::create("/a/b/cee/?dee=eff")));
     }
@@ -69,7 +69,7 @@ class VersionStoreTest extends \PHPUnit_Framework_TestCase
     public function willUrlEncodeQuery()
     {
         $uri = "/a/b/cee/?dee=eff/";
-        $version = microtime(true);
+        $version = 'version';
         $this->store->update(Request::create($uri), $version);
         $this->assertSame($version, $this->store->fetch(Request::create("/a/b/cee/?dee=eff%2F")));
     }
@@ -79,10 +79,10 @@ class VersionStoreTest extends \PHPUnit_Framework_TestCase
      */
     public function willFilterEmptySegments()
     {
-        $version1 = microtime(true);
+        $version1 = 'version1';
         $this->store->update(Request::create("/a/b///cee/"), $version1);
         $this->assertSame($version1, $this->store->fetch(Request::create('/a/b/cee')));
-        $version2 = microtime(true);
+        $version2 = 'version2';
         $this->store->update(Request::create("/a/b/cee//?dee=eff"), $version2);
         $this->assertSame($version2, $this->store->fetch(Request::create('/a/b/cee/?dee=eff')));
     }
@@ -93,7 +93,7 @@ class VersionStoreTest extends \PHPUnit_Framework_TestCase
     public function willFilterNonPrintable()
     {
         $uri = "/a/b/" . chr(6) . "cee/?" . chr(6) . "dee=eff";
-        $version = microtime(true);
+        $version = 'version';
         $this->store->update(Request::create($uri), $version);
         // The underscores are introduced by parse_url()
         $this->assertSame($version, $this->store->fetch(Request::create("/a/b/_cee/?_dee=eff")));
@@ -105,7 +105,7 @@ class VersionStoreTest extends \PHPUnit_Framework_TestCase
     public function willFilterNonAscii()
     {
         $uri = "/aنقاط/你好b，世界";
-        $version = microtime(true);
+        $version = 'version';
         $this->store->update(Request::create($uri), $version);
         // The underscores are introduced by preg_replace()
         $this->assertSame($version, $this->store->fetch(Request::create("/a________/______b_________")));
@@ -117,7 +117,7 @@ class VersionStoreTest extends \PHPUnit_Framework_TestCase
     public function willSaveSegmentsIndividually()
     {
         $uri = "/a/b/cee/?dee=eff";
-        $version = microtime(true);
+        $version = 'version';
         $this->store->update(Request::create($uri), $version);
         $this->assertSame($version, $this->store->fetch(Request::create("/a")));
         $this->assertSame($version, $this->store->fetch(Request::create("/a/b")));
@@ -133,7 +133,7 @@ class VersionStoreTest extends \PHPUnit_Framework_TestCase
     public function canRegisterPathVersion()
     {
         $uri = "/a/b/cee/?dee=eff";
-        $version = microtime(true);
+        $version = 'version';
         $this->store->register(Request::create($uri), $version);
         $this->assertSame($version, $this->store->fetch(Request::create($uri)));
     }
@@ -154,11 +154,11 @@ class VersionStoreTest extends \PHPUnit_Framework_TestCase
     public function updatingRootInvalidatesChildren()
     {
         $childUri = "/a/b/cee/?dee=eff";
-        $childVersion = microtime(true);
+        $childVersion = 'childVersion';
         $this->store->update(Request::create($childUri), $childVersion);
 
         $parentUri = "/a";
-        $parentVersion = microtime(true);
+        $parentVersion = 'parentVersion';
         $this->store->update(Request::create($parentUri), $parentVersion);
 
         $this->assertSame($parentVersion, $this->store->fetch(Request::create("/a")));
@@ -173,11 +173,11 @@ class VersionStoreTest extends \PHPUnit_Framework_TestCase
     public function updatingParentInvalidatesChildrenAndParents()
     {
         $childUri = "/a/b/cee/dee/?eff=gee";
-        $originalVersion = microtime(true);
+        $originalVersion = 'originalVersion';
         $this->store->update(Request::create($childUri), $originalVersion);
 
         $parentUri = "/a/b";
-        $newVersion = microtime(true);
+        $newVersion = 'newVersion';
         $this->store->update(Request::create($parentUri), $newVersion);
 
         $this->assertSame($newVersion, $this->store->fetch(Request::create("/a")));
@@ -193,11 +193,11 @@ class VersionStoreTest extends \PHPUnit_Framework_TestCase
     public function registeredChildrenAreInvalidated()
     {
         $uri = "/a/b/cee/?dee=eff";
-        $this->store->register(Request::create($uri), microtime(true));
+        $this->store->register(Request::create($uri), 'oldVersion');
         $this->assertTrue($this->store->contains(Request::create($uri)));
 
         $parentUri = "/a/b";
-        $newVersion = microtime(true);
+        $newVersion = 'newVersion';
         $this->store->update(Request::create($parentUri), $newVersion);
 
         $this->assertSame($newVersion, $this->store->fetch(Request::create("/a")));
@@ -212,11 +212,11 @@ class VersionStoreTest extends \PHPUnit_Framework_TestCase
     public function registerWillNotUpdateVersionOfExistingParent()
     {
         $parentUri = "/a/b";
-        $parentVersion = microtime(true);
+        $parentVersion = 'parentVersion';
         $this->store->update(Request::create($parentUri), $parentVersion);
 
         $childUri = "/a/b/cee/dee/?eff=gee";
-        $childVersion = microtime(true);
+        $childVersion = 'childVersion';
         $this->store->register(Request::create($childUri), $childVersion);
 
         $this->assertSame($parentVersion, $this->store->fetch(Request::create("/a")));
@@ -232,11 +232,11 @@ class VersionStoreTest extends \PHPUnit_Framework_TestCase
     public function updateWillUpdateVersionOfExistingParent()
     {
         $parentUri = "/a/b";
-        $parentVersion = microtime(true);
+        $parentVersion = 'parentVersion';
         $this->store->update(Request::create($parentUri), $parentVersion);
 
         $childUri = "/a/b/cee/dee/?eff=gee";
-        $childVersion = microtime(true);
+        $childVersion = 'childVersion';
         $this->store->update(Request::create($childUri), $childVersion);
 
         $this->assertSame($childVersion, $this->store->fetch(Request::create("/a")));
@@ -252,12 +252,12 @@ class VersionStoreTest extends \PHPUnit_Framework_TestCase
     public function savingParentInvalidatesParentsAndOnlyChildrenNotMatchingConstraint()
     {
         $childUri = "/a/b/cee/dee/?eff=gee";
-        $originalVersion = microtime(true);
+        $originalVersion = 'originalVersion';
         $this->store->setChildInvalidationConstraint('\/dee$');
         $this->store->update(Request::create($childUri), $originalVersion);
 
         $parentUri = "/a/b";
-        $newVersion = microtime(true);
+        $newVersion = 'newVersion';
         $this->store->update(Request::create($parentUri), $newVersion);
 
         $this->assertSame($newVersion, $this->store->fetch(Request::create("/a")));
